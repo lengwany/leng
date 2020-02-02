@@ -1,0 +1,665 @@
+---
+title: "Untitled"
+author: "Wanying Leng"
+date: "2020年1月30日"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+# Read Data
+ten_bond_data = read.csv("/Users/a123/Desktop/apm466_data.csv")
+head(ten_bond_data,10)
+
+
+# Calculate Year Fraction and accumulated interest
+vals =c("01/02/2020","01/03/2020","01/06/2020","01/07/2020","01/08/2020","01/09/2020","01/10/2020","01/13/2020","01/14/2020","01/15/2020")
+
+
+
+#maturity = as.Date((ten_bond_data$maturity.date),format = "%m/%d/%Y")
+semi_coupon_rate = as.numeric(ten_bond_data$coupon)
+semi_pmt = semi_coupon_rate*100/2
+matrix1 = matrix(184,nrow = 10, ncol = 10)
+diff_t = matrix(nrow = 10, ncol = 10)
+y_fraction = matrix(nrow = 10, ncol = 10)
+acc_int = matrix(nrow = 10, ncol = 10)
+
+startdate <- as.Date(vals,format ="%m/%d/%Y")
+#enddate <- as.Date((ten_bond_data$maturity.date),format = "%m/%d/%Y")
+
+for(i in sequence(length(seq_along(ten_bond_data$maturity.date)))){
+  for(k in sequence(length(seq_along(vals)))){
+    maturity <- as.Date(ten_bond_data$maturity.date[i],format = "%m/%d/%Y")
+    startdate <- as.Date(vals[k],"%m/%d/%Y")
+    diff_t[k,i] = as.numeric(difftime(maturity,startdate,units = "days")) - 1
+    #print(as.numeric(difftime(maturity,startdate,units = "days") - 1))
+    y_fraction[k,i] = diff_t[k,i]/365
+    acc_int[k,i] = (matrix1[k,i] - diff_t[k,1]) * (semi_pmt[i]/184)
+  }
+}
+y_fraction # year fraction
+acc_int   # acc_int
+
+
+#f_year = data.frame (startdate,t(sapply(y_fraction)))
+#f_acc = data.frame(vals,(sapply(acc_int,c)))
+#f_year
+#f_acc
+
+
+# Calculate dirty price
+df1 = as.data.frame(t(ten_bond_data),as.numeric)
+#df2 = as.data.frame(f_acc,as.numeric)
+df1 <- df1[-c(11,12,13,14),]         # clean price
+names(df1)[names(df1) == "V1"] = "X1"
+names(df1)[names(df1) == "V2"] = "X2"
+names(df1)[names(df1) == "V3"] = "X3"
+names(df1)[names(df1) == "V4"] = "X4"
+names(df1)[names(df1) == "V5"] = "X5"
+names(df1)[names(df1) == "V6"] = "X6"
+names(df1)[names(df1) == "V7"] = "X7"
+names(df1)[names(df1) == "V8"] = "X8"
+names(df1)[names(df1) == "V9"] = "X9"
+names(df1)[names(df1) == "V10"] = "X10"
+df2 = as.data.frame(acc_int,as.numeric)    # accumulated interest
+#df2 <- df2[,-c(1)]
+
+
+df1[, 1] <- as.numeric(as.character( df1[, 1] ))
+df1[, 2] <- as.numeric(as.character( df1[, 2] ))
+df1[, 3] <- as.numeric(as.character( df1[, 3] ))
+df1[, 4] <- as.numeric(as.character( df1[, 4] ))
+df1[, 5] <- as.numeric(as.character( df1[, 5] ))
+df1[, 6] <- as.numeric(as.character( df1[, 6] ))
+df1[, 7] <- as.numeric(as.character( df1[, 7] ))
+df1[, 8] <- as.numeric(as.character( df1[, 8] ))
+df1[, 9] <- as.numeric(as.character( df1[, 9] ))
+df1[, 10] <- as.numeric(as.character( df1[,10]))
+
+chart = cbind(df1,df2) # make two charts together
+#chart2 = data.matrix(chart,as.numeric)
+k1<-chart$V1+chart$X1
+chart<-cbind(chart,k1)
+k2<-chart$V2+chart$X2
+chart<-cbind(chart,k2)
+k3<-chart$V3+chart$X3
+chart<-cbind(chart,k3)
+k4<-chart$V4+chart$X4
+chart<-cbind(chart,k4)
+k5<-chart$V5+chart$X5
+chart<-cbind(chart,k5)
+k6<-chart$V6+chart$X6
+chart<-cbind(chart,k6)
+k7<-chart$V7+chart$X7
+chart<-cbind(chart,k7)
+k8<-chart$V8+chart$X8
+chart<-cbind(chart,k8)
+k9<-chart$V9+chart$X9
+chart<-cbind(chart,k9)
+k10<-chart$V10+chart$X10
+chart<-cbind(chart,k10)
+chart <- chart[,-c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20)]
+print(chart) # dirty price
+
+```
+
+
+
+```{r cars}
+install.packages("ggplot2")
+#install.packages("reshape")
+library(ggplot2)
+#library(reshape)
+# Calculate YTM 3/1/2020
+df3 = as.data.frame(y_fraction,as.numeric) 
+t_coupon = matrix(0,nrow = 10, ncol = 10)
+
+
+ytm_bond1 = rep() #ytm of bond1
+b1_dp = as.numeric(chart[,1])
+b1_yf = as.numeric(df3[,1])
+
+bval = function (cf,r,t,p){ 
+  (cf/exp(r*t))-p
+}
+ytm = function(cf,t,p){
+      uniroot(bval,c(0,1),cf=cf , t=t, p=p)$root
+}
+
+for (i in sequence(length((b1_dp)))){
+     ytm_bond1[i] <- ytm(100.75,b1_yf[i],b1_dp[i])
+}
+
+print(ytm_bond1)
+
+ytm_bond2 = rep() #ytm of bond2
+b2_dp = as.numeric(chart[,2])
+b2_yf = as.numeric(df3[,2])
+
+bval = function (cf1,cf2,r,t,p){ 
+  ((cf1/exp(r*t))+(cf2/exp(r*t)))-p
+}
+ytm = function(cf1,cf2,t,p){
+      uniroot(bval,c(0,1),cf1=cf1, cf2=cf2, t=t, p=p)$root
+}
+for (i in sequence(length((b2_dp)))){
+     ytm_bond2[i] <- ytm(0.375,100.375,b2_yf[i],b2_dp[i])
+}
+print(ytm_bond2)
+
+ytm_bond3 = rep() #ytm of bond3
+b3_dp = as.numeric(chart[,3])
+b3_yf = as.numeric(df3[,3])
+
+bval = function (cf1,cf2,cf3,r,t,p){ 
+  ((cf1/exp(r*t))+(cf2/exp(r*t))+(cf3/exp(r*t)))-p
+}
+ytm = function(cf1,cf2,cf3,t,p){
+      uniroot(bval,c(0,1),cf1=cf1, cf2=cf2,cf3=cf3, t=t, p=p)$root
+}
+for (i in sequence(length((b3_dp)))){
+     ytm_bond3[i] <- ytm(0.375,0.375,100.375,b3_yf[i],b3_dp[i])
+}
+print(ytm_bond3)
+
+ytm_bond4 = rep() #ytm of bond4
+b4_dp = as.numeric(chart[,4])
+b4_yf = as.numeric(df3[,4])
+
+bval = function (cf1,cf2,cf3,cf4,r,t,p){ 
+  ((cf1/exp(r*t))+(cf2/exp(r*t))+(cf3/exp(r*t))+(cf4/exp(r*t)))-p
+}
+ytm = function(cf1,cf2,cf3,cf4,t,p){
+      uniroot(bval,c(0,1),cf1=cf1, cf2=cf2,cf3=cf3,cf4=cf4, t=t, p=p)$root
+}
+for (i in sequence(length((b4_dp)))){
+     ytm_bond4[i] <- ytm(0.375,0.375,0.375,100.375,b4_yf[i],b4_dp[i])
+}
+print(ytm_bond4)
+
+ytm_bond5 = rep() #ytm of bond5
+b5_dp = as.numeric(chart[,5])
+b5_yf = as.numeric(df3[,5])
+
+bval = function (cf1,cf2,cf3,cf4,cf5,r,t,p){ 
+  ((cf1/exp(r*t))+(cf2/exp(r*t))+(cf3/exp(r*t))+(cf4/exp(r*t))+(cf5/exp(r*t)))-p
+}
+ytm = function(cf1,cf2,cf3,cf4,cf5,t,p){
+      uniroot(bval,c(0,1),cf1=cf1, cf2=cf2,cf3=cf3,cf4=cf4,cf5=cf5, t=t, p=p)$root
+}
+for (i in sequence(length((b5_dp)))){
+     ytm_bond5[i] <- ytm(0.25,0.25,0.25,0.25,100.25,b5_yf[i],b5_dp[i])
+}
+print(ytm_bond5)
+
+ytm_bond6 = rep() #ytm of bond6
+b6_dp = as.numeric(chart[,6])
+b6_yf = as.numeric(df3[,6])
+
+bval = function (cf1,cf2,cf3,cf4,cf5,cf6,r,t,p){ 
+  ((cf1/exp(r*t))+(cf2/exp(r*t))+(cf3/exp(r*t))+(cf4/exp(r*t))+(cf5/exp(r*t))+(cf6/exp(r*t)))-p
+}
+ytm = function(cf1,cf2,cf3,cf4,cf5,cf6,t,p){
+      uniroot(bval,c(0,1),cf1=cf1, cf2=cf2,cf3=cf3,cf4=cf4,cf5=cf5,cf6=cf6, t=t, p=p)$root
+}
+for (i in sequence(length((b6_dp)))){
+     ytm_bond6[i] <- ytm(1.375,1.375,1.375,1.375,1.375,101.375,b6_yf[i],b6_dp[i])
+}
+print(ytm_bond6)
+
+ytm_bond7 = rep() #ytm of bond7
+b7_dp = as.numeric(chart[,7])
+b7_yf = as.numeric(df3[,7])
+
+bval = function (cf1,cf2,cf3,cf4,cf5,cf6,cf7,r,t,p){ 
+  ((cf1/exp(r*t))+(cf2/exp(r*t))+(cf3/exp(r*t))+(cf4/exp(r*t))+(cf5/exp(r*t))+(cf6/exp(r*t))+(cf7/exp(r*t)))-p
+}
+ytm = function(cf1,cf2,cf3,cf4,cf5,cf6,cf7,t,p){
+      uniroot(bval,c(0,1),cf1=cf1, cf2=cf2,cf3=cf3,cf4=cf4,cf5=cf5,cf6=cf6, cf7=cf7,t=t, p=p)$root
+}
+for (i in sequence(length((b7_dp)))){
+     ytm_bond7[i] <- ytm(0.875,0.875,0.875,0.875,0.875,0.875,100.875,b7_yf[i],b7_dp[i])
+}
+print(ytm_bond7)
+
+ytm_bond8 = rep() #ytm of bond8
+b8_dp = as.numeric(chart[,8])
+b8_yf = as.numeric(df3[,8])
+
+bval = function (cf1,cf2,cf3,cf4,cf5,cf6,cf7,cf8,r,t,p){ 
+  ((cf1/exp(r*t))+(cf2/exp(r*t))+(cf3/exp(r*t))+(cf4/exp(r*t))+(cf5/exp(r*t))+(cf6/exp(r*t))+(cf7/exp(r*t))
+   +(cf8/exp(r*t)))-p
+}
+ytm = function(cf1,cf2,cf3,cf4,cf5,cf6,cf7,cf8,t,p){
+      uniroot(bval,c(0,1),cf1=cf1, cf2=cf2,cf3=cf3,cf4=cf4,cf5=cf5,cf6=cf6, cf7=cf7,cf8=cf8,t=t, p=p)$root
+}
+for (i in sequence(length((b8_dp)))){
+     ytm_bond8[i] <- ytm(0.75,0.75,0.75,0.75,0.75,0.75,0.75,100.75,b8_yf[i],b8_dp[i])
+}
+print(ytm_bond8)
+
+
+ytm_bond9 = rep() #ytm of bond9
+b9_dp = as.numeric(chart[,9])
+b9_yf = as.numeric(df3[,9])
+
+bval = function (cf1,cf2,cf3,cf4,cf5,cf6,cf7,cf8,cf9,r,t,p){ 
+  ((cf1/exp(r*t))+(cf2/exp(r*t))+(cf3/exp(r*t))+(cf4/exp(r*t))+(cf5/exp(r*t))+(cf6/exp(r*t))+(cf7/exp(r*t))
+   +(cf8/exp(r*t))+(cf9/exp(r*t)))-p
+}
+ytm = function(cf1,cf2,cf3,cf4,cf5,cf6,cf7,cf8,cf9,t,p){
+      uniroot(bval,c(0,1),cf1=cf1, cf2=cf2,cf3=cf3,cf4=cf4,cf5=cf5,cf6=cf6, cf7=cf7,cf8=cf8,cf9=cf9,t=t, p=p)$root
+}
+for (i in sequence(length((b9_dp)))){
+     ytm_bond9[i] <- ytm(1.125,1.125,1.125,1.125,1.125,1.125,1.125,1.125,101.125,b9_yf[i],b9_dp[i])
+}
+print(ytm_bond9)
+
+ytm_bond10 = rep() #ytm of bond10
+b10_dp = as.numeric(chart[,10])
+b10_yf = as.numeric(df3[,10])
+
+bval = function (cf1,cf2,cf3,cf4,cf5,cf6,cf7,cf8,cf9,cf10,r,t,p){ 
+  ((cf1/exp(r*t))+(cf2/exp(r*t))+(cf3/exp(r*t))+(cf4/exp(r*t))+(cf5/exp(r*t))+(cf6/exp(r*t))+(cf7/exp(r*t))
+   +(cf8/exp(r*t))+(cf9/exp(r*t))+(cf10/exp(r*t)))-p
+}
+ytm = function(cf1,cf2,cf3,cf4,cf5,cf6,cf7,cf8,cf9,cf10,t,p){
+      uniroot(bval,c(0,1),cf1=cf1, cf2=cf2,cf3=cf3,cf4=cf4,cf5=cf5,cf6=cf6, cf7=cf7,cf8=cf8,cf9=cf9,cf10=cf10,t=t, p=p)$root
+}
+for (i in sequence(length((b10_dp)))){
+     ytm_bond10[i] <- ytm(0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,100.75,b10_yf[i],b10_dp[i])
+}
+print(ytm_bond10)
+# ytm = function(cf,t,p){
+#   uniroot(bval,c(0,1),cf=cf , t=t, p=p)$root
+#  }
+
+ytmchart1 = cbind(ytm_bond1,ytm_bond2,ytm_bond3,ytm_bond4,ytm_bond5,ytm_bond6,ytm_bond7,ytm_bond8,ytm_bond9,ytm_bond10)
+
+
+# ggplot(data=ytmchart1,mapping=aes(x=matu,y=ytmchart1[1,]))+
+#   geom_line(data=ytmchart1,mapping=aes(x=matu,y=ytmchart1[2,]))+
+#   geom_line(data=ytmchart1,mapping=aes(x=matu,y=ytmchart1[3,]))+
+#   geom_line(data=ytmchart1,mapping=aes(x=matu,y=ytmchart1[4,]))+
+#   geom_line(data=ytmchart1,mapping=aes(x=matu,y=ytmchart1[5,]))+
+#   geom_line(data=ytmchart1,mapping=aes(x=matu,y=ytmchart1[6,]))+
+#   geom_line(data=ytmchart1,mapping=aes(x=matu,y=ytmchart1[7,]))+
+#   geom_line(data=ytmchart1,mapping=aes(x=matu,y=ytmchart1[8,]))+
+#   geom_line(data=ytmchart1,mapping=aes(x=matu,y=ytmchart1[9,]))+
+#   geom_line(data=ytmchart1,mapping=aes(x=matu,y=ytmchart1[10,]))+
+#   geom_point()
+print(ytmchart1)
+print(ytm_bond1)
+matu = c(0.5,1,1.5,2,2.5,3,3.5,4,4.5,5)
+
+
+
+plot(matu,ytmchart1[1,1:10],ylim=c(0.013,0.028),type="b", xlab = "Time to Maturity",ylab ="YTM",main = "Yield curve by initial YTMs",pch=3,col = 1)
+lines(matu,ytmchart1[2,1:10],type = "b", col = 2)
+lines(matu,ytmchart1[3,1:10],type = "b", col = 3)
+lines(matu,ytmchart1[4,1:10],type = "b", col = 4)
+lines(matu,ytmchart1[5,1:10],type = "b", col = 5)
+lines(matu,ytmchart1[6,1:10],type = "b", col = 6)
+lines(matu,ytmchart1[7,1:10],type = "b", col = 7)
+lines(matu,ytmchart1[8,1:10],type = "b", col = 8)
+lines(matu,ytmchart1[9,1:10],type = "b", col = 9)
+lines(matu,ytmchart1[10,1:10],type = "b", col = 10)
+legend("topright",pch=c(10,10),legend=c("1/2/2020","1/3/2020","1/6/2020","1/7/2020","1/8/2020","1/9/2020","1/10/2020","1/13/2020","1/14/2020","1/15/2020"),col=c(1,2,3,4,5,6,7,8,9,10),bty="n")
+
+
+
+
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+# Calculating spot rate
+df3 = as.data.frame(y_fraction,as.numeric) 
+t_coupon = matrix(0,nrow = 10, ncol = 10)
+
+spr_bond1 = rep() #spr of bond1
+b1_dp = as.numeric(chart[,1])
+b1_yf = as.numeric(df3[,1])
+
+bval = function (cf,r,t,p){ 
+  (cf/exp(r*t))-p
+}
+spr = function(cf,t,p){
+      uniroot(bval,c(0,1),cf=cf , t=t, p=p)$root
+}
+
+for (i in sequence(length((b1_dp)))){
+     spr_bond1[i] <- spr(100.75,b1_yf[i],b1_dp[i])
+}
+
+print(spr_bond1)
+
+spr_bond2 = rep() #spr of bond2
+b2_dp = as.numeric(chart[,2])
+b2_yf = as.numeric(df3[,2])
+
+
+bval = function (cf1,cf2,r1,r2,t,p){
+  ((cf1/exp(r1*t))+(cf2/exp(r2*t)))-p
+  #((cf1/exp(r1*t))+(cf2/exp(r2*t)))-p
+}
+
+spr = function(cf1,cf2,t,p,r1){
+      uniroot(bval,c(0,1),cf1=cf1, cf2=cf2, t=t, p=p,r1=r1)$root
+}
+for (i in sequence(length((b2_dp)))){
+     spr_bond2[i] <- spr(0.375,100.375,b2_yf[i],b2_dp[i],spr_bond1[i])
+}
+print(spr_bond2)
+
+
+spr_bond3 = rep() #spr of bond3
+b3_dp = as.numeric(chart[,3])
+b3_yf = as.numeric(df3[,3])
+
+bval = function (cf1,cf2,cf3,r1,r2,r3,t,p){ 
+  ((cf1/exp(r1*t))+(cf2/exp(r2*t))+(cf3/exp(r3*t)))-p
+}
+spr = function(cf1,cf2,cf3,t,p,r1,r2){
+      uniroot(bval,c(0,1),cf1=cf1, cf2=cf2,cf3=cf3, t=t, p=p,r1=r1,r2=r2)$root
+}
+for (i in sequence(length((b3_dp)))){
+     spr_bond3[i] <- spr(0.375,0.375,100.375,b3_yf[i],b3_dp[i],spr_bond1[i],spr_bond2[i])
+}
+print(spr_bond3)
+
+
+spr_bond4 = rep() #spr of bond4
+b4_dp = as.numeric(chart[,4])
+b4_yf = as.numeric(df3[,4])
+
+bval = function (cf1,cf2,cf3,cf4,r1,r2,r3,r4,t,p){ 
+  ((cf1/exp(r1*t))+(cf2/exp(r2*t))+(cf3/exp(r3*t))+(cf4/exp(r4*t)))-p
+}
+spr = function(cf1,cf2,cf3,cf4,t,p,r1,r2,r3){
+      uniroot(bval,c(0,1),cf1=cf1, cf2=cf2,cf3=cf3,cf4=cf4, t=t, p=p,r1=r1,r2=r2,r3=r3)$root
+}
+for (i in sequence(length((b4_dp)))){
+     spr_bond4[i] <- spr(0.375,0.375,0.375,100.375,b4_yf[i],b4_dp[i],spr_bond1[i],spr_bond2[i],spr_bond3[i])
+}
+print(spr_bond4)
+
+spr_bond5 = rep() #spr of bond4
+b5_dp = as.numeric(chart[,5])
+b5_yf = as.numeric(df3[,5])
+
+bval = function (cf1,cf2,cf3,cf4,cf5,r1,r2,r3,r4,r5,t,p){ 
+  ((cf1/exp(r1*t))+(cf2/exp(r2*t))+(cf3/exp(r3*t))+(cf4/exp(r4*t))+(cf5/exp(r5*t)))-p
+}
+spr = function(cf1,cf2,cf3,cf4,cf5,t,p,r1,r2,r3,r4){
+      uniroot(bval,c(0,1),cf1=cf1, cf2=cf2,cf3=cf3,cf4=cf4,cf5=cf5, t=t, p=p,r1=r1,r2=r2,r3=r3,r4=r4)$root
+}
+for (i in sequence(length((b5_dp)))){
+     spr_bond5[i] <- spr(0.25,0.25,0.25,0.25,100.25,b5_yf[i],b5_dp[i],spr_bond1[i],spr_bond2[i],spr_bond3[i],spr_bond4[i])
+}
+print(spr_bond5)
+
+spr_bond6 = rep() #ytm of bond6
+b6_dp = as.numeric(chart[,6])
+b6_yf = as.numeric(df3[,6])
+
+bval = function (cf1,cf2,cf3,cf4,cf5,cf6,r1,r2,r3,r4,r5,r6,t,p){ 
+  ((cf1/exp(r1*t))+(cf2/exp(r2*t))+(cf3/exp(r3*t))+(cf4/exp(r4*t))+(cf5/exp(r5*t))+(cf6/exp(r6*t)))-p
+}
+spr = function(cf1,cf2,cf3,cf4,cf5,cf6,t,p,r1,r2,r3,r4,r5){
+      uniroot(bval,c(0,1),cf1=cf1, cf2=cf2,cf3=cf3,cf4=cf4,cf5=cf5,cf6=cf6, t=t, p=p,r1=r1,r2=r2,r3=r3,r4=r4,r5=r5)$root
+}
+for (i in sequence(length((b6_dp)))){
+     spr_bond6[i] <- spr(1.375,1.375,1.375,1.375,1.375,101.375,b6_yf[i],b6_dp[i],spr_bond1[i],spr_bond2[i],spr_bond3[i],spr_bond4[i],spr_bond5[i])
+}
+print(spr_bond6)
+
+spr_bond7 = rep() #ytm of bond7
+b7_dp = as.numeric(chart[,7])
+b7_yf = as.numeric(df3[,7])
+
+bval = function (cf1,cf2,cf3,cf4,cf5,cf6,cf7,r1,r2,r3,r4,r5,r6,r7,t,p){ 
+  ((cf1/exp(r1*t))+(cf2/exp(r2*t))+(cf3/exp(r3*t))+(cf4/exp(r4*t))+(cf5/exp(r5*t))+(cf6/exp(r6*t))+(cf7/exp(r7*t)))-p
+}
+spr = function(cf1,cf2,cf3,cf4,cf5,cf6,cf7,t,p,r1,r2,r3,r4,r5,r6){
+      uniroot(bval,c(0,1),cf1=cf1, cf2=cf2,cf3=cf3,cf4=cf4,cf5=cf5,cf6=cf6, cf7=cf7,t=t, p=p,r1=r1,r2=r2,r3=r3,r4=r4,r5=r5,r6=r6)$root
+}
+for (i in sequence(length((b7_dp)))){
+     spr_bond7[i] <- spr(0.875,0.875,0.875,0.875,0.875,0.875,100.875,b7_yf[i],b7_dp[i],spr_bond1[i],spr_bond2[i],spr_bond3[i],spr_bond4[i],spr_bond5[i],spr_bond6[i])
+}
+print(spr_bond7)
+
+spr_bond8 = rep() #ytm of bond8
+b8_dp = as.numeric(chart[,8])
+b8_yf = as.numeric(df3[,8])
+
+bval = function (cf1,cf2,cf3,cf4,cf5,cf6,cf7,cf8,r1,r2,r3,r4,r5,r6,r7,r8,t,p){ 
+  ((cf1/exp(r1*t))+(cf2/exp(r2*t))+(cf3/exp(r3*t))+(cf4/exp(r4*t))+(cf5/exp(r5*t))+(cf6/exp(r6*t))+(cf7/exp(r7*t))
+   +(cf8/exp(r8*t)))-p
+}
+spr = function(cf1,cf2,cf3,cf4,cf5,cf6,cf7,cf8,t,p,r1,r2,r3,r4,r5,r6,r7){
+      uniroot(bval,c(0,1),cf1=cf1, cf2=cf2,cf3=cf3,cf4=cf4,cf5=cf5,cf6=cf6, cf7=cf7,cf8=cf8,t=t, p=p,r1=r1,r2=r2,r3=r3,r4=r4,r5=r5,r6=r6,r7=r7)$root
+}
+for (i in sequence(length((b8_dp)))){
+     spr_bond8[i] <- spr(0.75,0.75,0.75,0.75,0.75,0.75,0.75,100.75,b8_yf[i],b8_dp[i],spr_bond1[i],spr_bond2[i],spr_bond3[i],spr_bond4[i],spr_bond5[i],spr_bond6[i],spr_bond7[i])
+}
+print(spr_bond8)
+
+
+spr_bond9 = rep() #ytm of bond9
+b9_dp = as.numeric(chart[,9])
+b9_yf = as.numeric(df3[,9])
+
+bval = function (cf1,cf2,cf3,cf4,cf5,cf6,cf7,cf8,cf9,r1,r2,r3,r4,r5,r6,r7,r8,r9,t,p){ 
+  ((cf1/exp(r1*t))+(cf2/exp(r2*t))+(cf3/exp(r3*t))+(cf4/exp(r4*t))+(cf5/exp(r5*t))+(cf6/exp(r6*t))+(cf7/exp(r7*t))
+   +(cf8/exp(r8*t))+(cf9/exp(r9*t)))-p
+}
+spr = function(cf1,cf2,cf3,cf4,cf5,cf6,cf7,cf8,cf9,t,p,r1,r2,r3,r4,r5,r6,r7,r8){
+      uniroot(bval,c(0,1),cf1=cf1, cf2=cf2,cf3=cf3,cf4=cf4,cf5=cf5,cf6=cf6, cf7=cf7,cf8=cf8,cf9=cf9,t=t, p=p,r1=r1,r2=r2,r3=r3,r4=r4,r5=r5,r6=r6,r7=r7,r8=r8)$root
+}
+for (i in sequence(length((b9_dp)))){
+     spr_bond9[i] <- spr(1.125,1.125,1.125,1.125,1.125,1.125,1.125,1.125,101.125,b9_yf[i],b9_dp[i],spr_bond1[i],spr_bond2[i],spr_bond3[i],spr_bond4[i],spr_bond5[i],spr_bond6[i],spr_bond7[i],spr_bond8[i])
+}
+print(spr_bond9)
+
+spr_bond10 = rep() #ytm of bond10
+b10_dp = as.numeric(chart[,10])
+b10_yf = as.numeric(df3[,10])
+
+bval = function (cf1,cf2,cf3,cf4,cf5,cf6,cf7,cf8,cf9,cf10,r1,r2,r3,r4,r5,r6,r7,r8,r9,r10,t,p){ 
+  ((cf1/exp(r1*t))+(cf2/exp(r2*t))+(cf3/exp(r3*t))+(cf4/exp(r4*t))+(cf5/exp(r5*t))+(cf6/exp(r6*t))+(cf7/exp(r7*t))
+   +(cf8/exp(r8*t))+(cf9/exp(r9*t))+(cf10/exp(r10*t)))-p
+}
+spr = function(cf1,cf2,cf3,cf4,cf5,cf6,cf7,cf8,cf9,cf10,t,p,r1,r2,r3,r4,r5,r6,r7,r8,r9){
+      uniroot(bval,c(0,1),cf1=cf1, cf2=cf2,cf3=cf3,cf4=cf4,cf5=cf5,cf6=cf6, cf7=cf7,cf8=cf8,cf9=cf9,cf10=cf10,t=t, p=p,r1=r1,r2=r2,r3=r3,r4=r4,r5=r5,r6=r6,r7=r7,r8=r8,r9=r9)$root
+}
+for (i in sequence(length((b10_dp)))){
+     spr_bond10[i] <- spr(0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,100.75,b10_yf[i],b10_dp[i],spr_bond1[i],spr_bond2[i],spr_bond3[i],spr_bond4[i],spr_bond5[i],spr_bond6[i],spr_bond7[i],spr_bond8[i],spr_bond9[i])
+}
+print(spr_bond10)
+# ytm = function(cf,t,p){
+#   uniroot(bval,c(0,1),cf=cf , t=t, p=p)$root
+#  }
+
+sprchart1 = cbind(spr_bond1,spr_bond2,spr_bond3,spr_bond4,spr_bond5,spr_bond6,spr_bond7,spr_bond8,spr_bond9,spr_bond10)
+
+
+matu = c(0.5,1,1.5,2,2.5,3,3.5,4,4.5,5)
+plot(matu,sprchart1[1,1:10],ylim=c(0.015,0.027),type="b", xlab = "Time to Maturity",ylab ="Spot rate",main = "Spot Curve",pch=5,col=1)
+lines(matu,sprchart1[2,1:10],type = "b", col = 2)
+lines(matu,sprchart1[3,1:10],type = "b", col = 3)
+lines(matu,sprchart1[4,1:10],type = "b", col = 4)
+lines(matu,sprchart1[5,1:10],type = "b", col = 5)
+lines(matu,sprchart1[6,1:10],type = "b", col = 6)
+lines(matu,sprchart1[7,1:10],type = "b", col = 7)
+lines(matu,sprchart1[8,1:10],type = "b", col = 8)
+lines(matu,sprchart1[9,1:10],type = "b", col = 9)
+lines(matu,sprchart1[10,1:10],type = "b", col = 10)
+legend("topright",pch=c(10,10),legend=c("1/2/2020","1/3/2020","1/6/2020","1/7/2020","1/8/2020","1/9/2020","1/10/2020","1/13/2020","1/14/2020","1/15/2020"),col=c(1,2,3,4,5,6,7,8,9,10),bty="n")
+
+
+matu = c(0.5,1,1.5,2,2.5,3,3.5,4,4.5,5)
+plot(lowess(matu,sprchart1[1,1:10]),ylim=c(0.015,0.027),type="b", xlab = "Time to Maturity",ylab ="Spot rate",main = "Spot Curve",pch=5,col=1)
+lines(lowess(matu,sprchart1[2,1:10]),type = "b", col = 2)
+lines(lowess(matu,sprchart1[3,1:10]),type = "b", col = 3)
+lines(lowess(matu,sprchart1[4,1:10]),type = "b", col = 4)
+lines(lowess(matu,sprchart1[5,1:10]),type = "b", col = 5)
+lines(lowess(matu,sprchart1[6,1:10]),type = "b", col = 6)
+lines(lowess(matu,sprchart1[7,1:10]),type = "b", col = 7)
+lines(lowess(matu,sprchart1[8,1:10]),type = "b", col = 8)
+lines(lowess(matu,sprchart1[9,1:10]),type = "b", col = 9)
+lines(lowess(matu,sprchart1[10,1:10]),type = "b", col = 10)
+legend("topright",pch=c(10,10),legend=c("1/2/2020","1/3/2020","1/6/2020","1/7/2020","1/8/2020","1/9/2020","1/10/2020","1/13/2020","1/14/2020","1/15/2020"),col=c(1,2,3,4,5,6,7,8,9,10),bty="n")
+
+
+```
+
+
+```{r setup, include=FALSE}
+# Forward rate
+# for_bond2 = rep() #ytm of bond1
+b2_dp = as.numeric(chart[,2])
+b2_yf = as.numeric(df3[,2])
+# 
+# bval = function (sp,sp1){ 
+#   ((1+sp)^2/(1+sp1))-1
+# }
+# ytm = function(sp1){
+#       uniroot(bval,c(0,1),sp1=sp1)$root
+# }
+sprchartyear = cbind(spr_bond2,spr_bond4,spr_bond6,spr_bond8,spr_bond10)
+
+
+# forwardrate r1,2
+forwardrate1 = rep()
+
+for (i in sequence(length((spr_bond4)))){
+     forwardrate1[i] <- ((spr_bond4[i]*b4_yf[i])-(spr_bond2[i]*b2_yf[i]))/(b4_yf[i]-b2_yf[i])
+}
+
+print(forwardrate1)
+
+# forwardrate r1,3
+forwardrate2 = rep()
+
+for (i in sequence(length((spr_bond6)))){
+     forwardrate2[i] <- ((spr_bond6[i]*b6_yf[i])-(spr_bond2[i]*b2_yf[i]))/(b6_yf[i]-b2_yf[i])
+}
+
+print(forwardrate2)
+
+# forwardrate r1,4
+forwardrate3 = rep()
+
+for (i in sequence(length((spr_bond8)))){
+     forwardrate3[i] <- ((spr_bond8[i]*b8_yf[i])-(spr_bond2[i]*b2_yf[i]))/(b8_yf[i]-b2_yf[i])
+}
+
+print(forwardrate3)
+
+# forwardrate r1,5
+forwardrate4 = rep()
+
+for (i in sequence(length((spr_bond10)))){
+     forwardrate4[i] <- ((spr_bond10[i]*b10_yf[i])-(spr_bond2[i]*b2_yf[i]))/(b10_yf[i]-b2_yf[i])
+}
+
+print(forwardrate4)
+
+forwardr1_4 = cbind(forwardrate1,forwardrate2,forwardrate3,forwardrate4)
+
+matu = c(1,2,3,4)
+plot(matu,forwardr1_4[1,],ylim=c(0.015,0.020),type="b", xlab = "Time to Maturity",ylab ="f12-f15",main = "Forward Curve",pch=5,col=1)
+lines(matu,forwardr1_4[2,],type = "b", col = 2)
+lines(matu,forwardr1_4[3,],type = "b", col = 3)
+lines(matu,forwardr1_4[4,],type = "b", col = 4)
+axis(3, at = 1,labels=c("f12"), col=1, las=0)
+axis(3, at = 2,labels=c("f13"), col=1, las=0)
+axis(3, at = 3,labels=c("f14"), col=1, las=0)
+axis(3, at = 4,labels=c("f15"), col=1, las=0)
+legend("topright",pch=c(10,10),legend=c("1/2/2020","1/3/2020","1/6/2020","1/7/2020","1/8/2020","1/9/2020","1/10/2020","1/13/2020","1/14/2020","1/15/2020"),col=c(1,2,3,4,5),bty="n")
+```
+
+
+```{r setup, include=FALSE}
+# cov
+ytm5years = cbind(ytm_bond2,ytm_bond4,ytm_bond6,ytm_bond8,ytm_bond10)
+# y1 <- ytm_bond2
+# n <- length(ytm_bond1)
+# y1 <- log(ytm_bond1[-1]/ytm_bond1[-n])
+
+y1 <- ytm_bond2
+n <- length(ytm_bond2)
+y1 <- log(ytm_bond2[-1]/ytm_bond2[-n])
+
+# y3 <- ytm_bond3
+# n <- length(ytm_bond3)
+# y3 <- log(ytm_bond3[-1]/ytm_bond3[-n])
+
+y2 <- ytm_bond4
+n <- length(ytm_bond4)
+y2 <- log(ytm_bond4[-1]/ytm_bond4[-n])
+
+# y5 <- ytm_bond5
+# n <- length(ytm_bond5)
+# y5 <- log(ytm_bond5[-1]/ytm_bond5[-n])
+
+y3 <- ytm_bond6
+n <- length(ytm_bond6)
+y3 <- log(ytm_bond6[-1]/ytm_bond6[-n])
+
+# y7 <- ytm_bond7
+# n <- length(ytm_bond7)
+# y7 <- log(ytm_bond7[-1]/ytm_bond7[-n])
+
+y4 <- ytm_bond8
+n <- length(ytm_bond8)
+y4 <- log(ytm_bond8[-1]/ytm_bond8[-n])
+
+# y9 <- ytm_bond9
+# n <- length(ytm_bond9)
+# y9 <- log(ytm_bond9[-1]/ytm_bond9[-n])
+
+y5 <- ytm_bond10
+n <- length(ytm_bond10)
+y5 <- log(ytm_bond10[-1]/ytm_bond10[-n])
+
+ytm5years1 = cbind(y1,y2,y3,y4,y5)
+ytm5years1 <- ytm5years1[-c(10),]
+covytm = cov(ytm5years1)      #covariace of daily log return of yield
+
+r1 <- forwardrate1
+n <- length(forwardrate1)
+r1 <- log(forwardrate1[-1]/forwardrate1[-n])
+
+r2 <- forwardrate2
+n <- length(forwardrate2)
+r2 <- log(forwardrate2[-1]/forwardrate2[-n])
+
+r3 <- forwardrate3
+n <- length(forwardrate3)
+r3 <- log(forwardrate3[-1]/forwardrate3[-n])
+
+r4 <- forwardrate4
+n <- length(forwardrate4)
+r4 <- log(forwardrate4[-1]/forwardrate4[-n])
+
+fwd5years1 = cbind(r1,r2,r3,r4)
+fwd5years1 <- fwd5years1[-c(10),]
+covfwd = cov(fwd5years1) #covariace of fwd rate
+
+
+eigen(covytm)
+
+eigen(covfwd)
+
+```
+```{r setup, include=FALSE}
+
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
